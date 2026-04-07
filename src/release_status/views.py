@@ -12,7 +12,9 @@ ENV_COLORS = ["green", "yellow", "blue", "magenta", "cyan", "red"]
 
 def _sha_text(short_sha: str, full_sha: str, project: ProjectConfig) -> Text:
     url = project.repository.provider.commit_url(project.repository.base_url, full_sha)
-    return Text(short_sha, style=f"link {url}")
+    text = Text()
+    text.append(short_sha, style=f"link {url}")
+    return text
 
 
 def _find_commit(commits: list[Commit], version: str) -> Commit | None:
@@ -43,10 +45,10 @@ def render_commits(
     console = console or Console()
     console.print()
     table = Table(title=f"Commits: {project.name}", show_lines=False)
-    table.add_column("SHA", style="dim", width=SHORT_SHA_LENGTH)
-    table.add_column("Date", style="cyan", width=12)
-    table.add_column("Author", style="white", width=20)
-    table.add_column("Message", style="white", min_width=30)
+    table.add_column("SHA", style="dim", no_wrap=True)
+    table.add_column("Date", style="cyan", no_wrap=True)
+    table.add_column("Author", style="white", no_wrap=True)
+    table.add_column("Message", style="white")
     table.add_column("Deployed", justify="left")
 
     # Build SHA → env names mapping
@@ -103,11 +105,14 @@ def render_environments(
     table.add_column("Status", justify="center")
     table.add_column("Commit Info", style="dim")
 
-    for env in environments:
+    for i, env in enumerate(environments):
+        color = ENV_COLORS[i % len(ENV_COLORS)]
+        env_name = Text()
+        env_name.append(f" {env.name} ", style=f"bold white on {color}")
         if env.error:
-            table.add_row(
-                env.name, "---", Text("ERROR", style="bold red"), env.error
-            )
+            status = Text()
+            status.append("ERROR", style=f"bold red link {env.url}")
+            table.add_row(env_name, "---", status, env.error)
         elif env.version:
             sha_display = _sha_text(
                 env.version[:SHORT_SHA_LENGTH], env.version, project
@@ -118,9 +123,9 @@ def render_environments(
                 commit_info = (
                     f"{matching.date.strftime('%Y-%m-%d')} {matching.message[:40]}"
                 )
-            table.add_row(
-                env.name, sha_display, Text("OK", style="bold green"), commit_info
-            )
+            status = Text()
+            status.append("OK", style=f"bold green link {env.url}")
+            table.add_row(env_name, sha_display, status, commit_info)
 
     console.print(table)
 
