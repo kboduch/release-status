@@ -148,6 +148,7 @@ class ProjectConfig(BaseModel):
 class AppConfig(BaseModel):
     cache_dir: Path
     cache_ttl_minutes: int
+    since_days: int
     projects: list[ProjectConfig]
 
 

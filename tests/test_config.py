@@ -31,6 +31,7 @@ def test_missing_version_field_in_json_source(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
         "cache_ttl_minutes": 5,
+        "since_days": 180,
         "projects": [
             {
                 "name": "Bad",
@@ -61,6 +62,7 @@ def test_regex_invalid_group_reference(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
         "cache_ttl_minutes": 5,
+        "since_days": 180,
         "projects": [
             {
                 "name": "Bad",
@@ -92,6 +94,7 @@ def test_regex_invalid_pattern(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
         "cache_ttl_minutes": 5,
+        "since_days": 180,
         "projects": [
             {
                 "name": "Bad",
@@ -145,6 +148,7 @@ def test_discriminated_provider_types(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
         "cache_ttl_minutes": 5,
+        "since_days": 180,
         "projects": [
             {
                 "name": "GitLabAPI",

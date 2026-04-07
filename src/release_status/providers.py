@@ -44,12 +44,8 @@ class GitHubCliCommitProvider:
         since = _since_iso(since_days)
         cmd = [
             "gh", "api",
-            f"repos/{repo.repo_path}/commits",
-            "-q", ".",
+            f"repos/{repo.repo_path}/commits?sha={repo.branch}&since={since}&per_page=100",
             "--paginate",
-            "-f", f"sha={repo.branch}",
-            "-f", f"since={since}",
-            "-f", "per_page=100",
         ]
         try:
             result = subprocess.run(

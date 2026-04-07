@@ -29,6 +29,7 @@ def render_commits(
     console: Console | None = None,
 ) -> None:
     console = console or Console()
+    console.print()
     table = Table(title=f"Commits: {project.name}", show_lines=False)
     table.add_column("SHA", style="dim", width=9)
     table.add_column("Date", style="cyan", width=12)
@@ -79,6 +80,7 @@ def render_environments(
     console: Console | None = None,
 ) -> None:
     console = console or Console()
+    console.print()
     table = Table(title=f"Environments: {project.name}")
     table.add_column("Environment", style="bold")
     table.add_column("SHA", style="cyan")
@@ -102,10 +104,6 @@ def render_environments(
                 )
             table.add_row(
                 env.name, sha_display, Text("OK", style="bold green"), commit_info
-            )
-        else:
-            table.add_row(
-                env.name, "---", Text("NO VERSION", style="bold yellow"), ""
             )
 
     console.print(table)

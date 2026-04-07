@@ -69,7 +69,7 @@ release-status --since 60 commits MyProject   # look back 60 days instead of def
 |------|-------------|
 | `--config`, `-c` | Path to config file |
 | `--no-cache` | Bypass cache for this run |
-| `--since` | Days to look back for commits (default: 30) |
+| `--since` | Override days to look back for commits (default from config) |
 
 ### Shell completion
 
@@ -100,6 +100,7 @@ Repository URL should be the HTTPS clone URL (e.g. `https://github.com/org/repo.
 {
   "cache_dir": "~/.cache/release-status",
   "cache_ttl_minutes": 5,
+  "since_days": 180,
   "projects": [
     {
       "name": "MyApp",
@@ -210,6 +211,7 @@ Both cache directory and TTL are configurable:
 {
   "cache_dir": "/tmp/my-release-cache",
   "cache_ttl_minutes": 5,
+  "since_days": 180,
   "projects": [...]
 }
 ```

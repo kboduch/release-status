@@ -1,6 +1,7 @@
 {
   "cache_dir": "~/.cache/release-status",
   "cache_ttl_minutes": 5,
+  "since_days": 180,
   "projects": [
     {
       "name": "ABC",

@@ -33,7 +33,7 @@ console = Console()
 class _State:
     config_path: Path | None = None
     no_cache: bool = False
-    since_days: int = 30
+    since_days: int | None = None
 
 
 _state = _State()
@@ -57,8 +57,8 @@ def main(
         bool, typer.Option("--no-cache", help="Disable cache")
     ] = False,
     since: Annotated[
-        int, typer.Option("--since", help="Days to look back for commits")
-    ] = 30,
+        Optional[int], typer.Option("--since", help="Override days to look back for commits")
+    ] = None,
 ) -> None:
     """Release Status — deployment tracking across projects."""
     _state.config_path = config
@@ -74,9 +74,10 @@ def commits(
     cfg = _load_config()
     proj = _find_project(cfg, project)
     cache = _make_cache(cfg)
+    since = _since_days(cfg)
 
     with console.status("Fetching commits..."):
-        commit_list = _fetch_commits(proj, cache)
+        commit_list = _fetch_commits(proj, cache, since)
 
     with console.status("Checking environments..."):
         env_statuses = _fetch_environments(proj, cache)
@@ -92,9 +93,10 @@ def envs(
     cfg = _load_config()
     proj = _find_project(cfg, project)
     cache = _make_cache(cfg)
+    since = _since_days(cfg)
 
     with console.status("Fetching data..."):
-        commit_list = _fetch_commits(proj, cache)
+        commit_list = _fetch_commits(proj, cache, since)
         env_statuses = _fetch_environments(proj, cache)
 
     render_environments(proj, commit_list, env_statuses, console
@@ -154,6 +156,7 @@ def init() -> None:
     starter = {
         "cache_dir": str(Path.home() / ".cache" / "release-status"),
         "cache_ttl_minutes": 5,
+        "since_days": 180,
         "projects": [
             {
                 "name": "my-project",
@@ -221,16 +224,20 @@ def _make_cache(config: AppConfig) -> Cache:
     return cache
 
 
-def _cache_key_commits(proj: ProjectConfig) -> str:
+def _since_days(config: AppConfig) -> int:
+    return _state.since_days if _state.since_days is not None else config.since_days
+
+
+def _cache_key_commits(proj: ProjectConfig, since_days: int) -> str:
     return (
         f"commits:{proj.repository.provider.type}"
         f":{proj.repository.url}:{proj.repository.branch}"
-        f":{_state.since_days}"
+        f":{since_days}"
     )
 
 
-def _fetch_commits(proj: ProjectConfig, cache: Cache) -> list[Commit]:
-    key = _cache_key_commits(proj)
+def _fetch_commits(proj: ProjectConfig, cache: Cache, since_days: int) -> list[Commit]:
+    key = _cache_key_commits(proj, since_days)
     cached = cache.get(key)
     if cached is not None:
         return [
@@ -246,7 +253,7 @@ def _fetch_commits(proj: ProjectConfig, cache: Cache) -> list[Commit]:
 
     try:
         provider = get_provider(proj.repository.provider)
-        commits = provider.fetch_commits(proj.repository, _state.since_days)
+        commits = provider.fetch_commits(proj.repository, since_days)
     except (ProviderError, ToolNotFoundError) as e:
         console.print(f"[red]Error fetching commits:[/red] {e}")
         raise typer.Exit(1)
