@@ -43,7 +43,7 @@ def render_commits(
     console = console or Console()
     console.print()
     table = Table(title=f"Commits: {project.name}", show_lines=False)
-    table.add_column("SHA", style="dim", width=9)
+    table.add_column("SHA", style="dim", width=SHORT_SHA_LENGTH)
     table.add_column("Date", style="cyan", width=12)
     table.add_column("Author", style="white", width=20)
     table.add_column("Message", style="white", min_width=30)
