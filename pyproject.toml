@@ -1,0 +1,35 @@
+[project]
+name = "release-status"
+version = "0.1.0"
+description = "CLI tool to show release/deployment status across multiple projects"
+readme = "README.md"
+authors = [
+    { name = "Krzysztof Boduch", email = "boduch.krzysztof@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "typer>=0.15.0",
+    "rich>=13.0.0",
+    "pydantic>=2.10.0",
+    "jsonpath-ng>=1.6.0",
+    "requests>=2.32.0",
+]
+
+[project.scripts]
+release-status = "release_status.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.14.0",
+    "responses>=0.25.0",
+    "mypy>=1.14.0",
+    "types-requests>=2.32.0",
+]
+
+[tool.mypy]
+strict = true
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"

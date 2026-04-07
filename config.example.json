@@ -1,0 +1,86 @@
+{
+  "cache_dir": "~/.cache/release-status",
+  "cache_ttl_minutes": 5,
+  "projects": [
+    {
+      "name": "ABC",
+      "repository": {
+        "url": "https://gitlab.com/org/repo.git",
+        "branch": "main",
+        "provider": { "type": "gitlab-cli" }
+      },
+      "environments": [
+        {
+          "name": "dev",
+          "url": "https://dev.example.com/build.json",
+          "source": {
+            "type": "json",
+            "fields": { "version": "$.version" }
+          }
+        },
+        {
+          "name": "beta",
+          "url": "https://beta.example.com/build.json",
+          "source": {
+            "type": "json",
+            "fields": { "version": "$.version" }
+          }
+        },
+        {
+          "name": "prod",
+          "url": "https://prod.example.com/build.json",
+          "source": {
+            "type": "json",
+            "fields": { "version": "$.version" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "XYZ",
+      "repository": {
+        "url": "https://github.com/org/xyz.git",
+        "branch": "main",
+        "provider": { "type": "github-cli" }
+      },
+      "environments": [
+        {
+          "name": "dev",
+          "url": "https://dev.xyz.com/build.html",
+          "source": {
+            "type": "regex",
+            "pattern": "(.*)\\t(?P<commit_time>.*)\\n(?P<version>.*)\\t(?P<pipeline_time>.*)",
+            "fields": { "version": "version" }
+          }
+        },
+        {
+          "name": "prod",
+          "url": "https://prod.xyz.com/build.json",
+          "source": {
+            "type": "json",
+            "fields": { "version": "$.version" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Foo",
+      "repository": {
+        "url": "https://gitlab.com/org/foo.git",
+        "branch": "main",
+        "provider": { "type": "gitlab-api", "token_env": "PERSONAL_API_TOKEN" }
+      },
+      "environments": [
+        {
+          "name": "dev",
+          "url": "https://dev.foo.com/build.html",
+          "source": {
+            "type": "regex",
+            "pattern": "(.*)\\t(?P<commit_time>.*)\\n(?P<version>.*)\\t(?P<pipeline_time>.*)",
+            "fields": { "version": "version", "pipeline_time": "pipeline_time" }
+          }
+        }
+      ]
+    }
+  ]
+}
