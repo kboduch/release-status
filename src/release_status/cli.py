@@ -83,7 +83,7 @@ def commits(
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_commits(proj, commit_list, env_statuses, console)
+    render_commits(proj, commit_list, env_statuses, since, cfg.cache_ttl_minutes, console)
 
 
 @app.command()
@@ -101,7 +101,7 @@ def envs(
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_environments(proj, commit_list, env_statuses, console)
+    render_environments(proj, commit_list, env_statuses, since, cfg.cache_ttl_minutes, console)
 
 
 @app.command()

@@ -22,10 +22,22 @@ def _find_commit(commits: list[Commit], version: str) -> Commit | None:
     return None
 
 
+def _render_status_line(
+    since_days: int, cache_ttl_minutes: int, console: Console
+) -> None:
+    console.print(
+        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_ttl_minutes}m",
+        style="dim",
+    )
+    console.print()
+
+
 def render_commits(
     project: ProjectConfig,
     commits: list[Commit],
     environments: list[EnvironmentStatus],
+    since_days: int,
+    cache_ttl_minutes: int,
     console: Console | None = None,
 ) -> None:
     console = console or Console()
@@ -72,11 +84,15 @@ def render_commits(
                 f"  [red]ERROR[/red] {env.name}: {env.error} (url: {env.url})"
             )
 
+    _render_status_line(since_days, cache_ttl_minutes, console)
+
 
 def render_environments(
     project: ProjectConfig,
     commits: list[Commit],
     environments: list[EnvironmentStatus],
+    since_days: int,
+    cache_ttl_minutes: int,
     console: Console | None = None,
 ) -> None:
     console = console or Console()
@@ -107,6 +123,8 @@ def render_environments(
             )
 
     console.print(table)
+
+    _render_status_line(since_days, cache_ttl_minutes, console)
 
 
 def render_projects(config: AppConfig, console: Console | None = None) -> None:
