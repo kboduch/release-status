@@ -82,6 +82,7 @@ def commits(
     with console.status("Checking environments..."):
         env_statuses = _fetch_environments(proj, cache)
 
+    _fetch_missing_commits(commit_list, env_statuses, proj, cache)
     render_commits(proj, commit_list, env_statuses, console)
 
 
@@ -99,8 +100,8 @@ def envs(
         commit_list = _fetch_commits(proj, cache, since)
         env_statuses = _fetch_environments(proj, cache)
 
-    render_environments(proj, commit_list, env_statuses, console
-    )
+    _fetch_missing_commits(commit_list, env_statuses, proj, cache)
+    render_environments(proj, commit_list, env_statuses, console)
 
 
 @app.command()
@@ -305,3 +306,47 @@ def _fetch_environments(
         results.append(status)
 
     return results
+
+
+def _fetch_missing_commits(
+    commit_list: list[Commit],
+    env_statuses: list[EnvironmentStatus],
+    proj: ProjectConfig,
+    cache: Cache,
+) -> None:
+    """Fetch individual commits for deployed SHAs not in the commit list."""
+    for env in env_statuses:
+        if not env.version or any(c.sha_matches(env.version) for c in commit_list):
+            continue
+
+        key = f"commit:{env.version}"
+        cached = cache.get(key)
+        if cached is not None:
+            commit_list.append(
+                Commit(
+                    sha=cached["sha"],
+                    short_sha=cached["short_sha"],
+                    message=cached["message"],
+                    author=cached["author"],
+                    date=datetime.fromisoformat(cached["date"]),
+                )
+            )
+            continue
+
+        try:
+            provider = get_provider(proj.repository.provider)
+            commit = provider.fetch_commit(proj.repository, env.version)
+        except (ProviderError, ToolNotFoundError):
+            continue
+
+        cache.set(
+            key,
+            {
+                "sha": commit.sha,
+                "short_sha": commit.short_sha,
+                "message": commit.message,
+                "author": commit.author,
+                "date": commit.date.isoformat(),
+            },
+        )
+        commit_list.append(commit)

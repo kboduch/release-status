@@ -25,6 +25,9 @@ class CommitProvider(Protocol):
     def fetch_commits(self, repo: RepositoryConfig, since_days: int) -> list[Commit]:
         ...
 
+    def fetch_commit(self, repo: RepositoryConfig, sha: str) -> Commit:
+        ...
+
 
 def _since_iso(days: int) -> str:
     dt = datetime.now(timezone.utc) - timedelta(days=days)
@@ -69,6 +72,29 @@ class GitHubCliCommitProvider:
             )
             for item in data
         ]
+
+
+    def fetch_commit(self, repo: RepositoryConfig, sha: str) -> Commit:
+        cmd = ["gh", "api", f"repos/{repo.repo_path}/commits/{sha}"]
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=True, timeout=30
+            )
+        except subprocess.CalledProcessError as e:
+            raise ProviderError(
+                f"gh api failed (exit {e.returncode}): {e.stderr.strip()}",
+                "github-cli",
+            ) from e
+        except subprocess.TimeoutExpired as e:
+            raise ProviderError("gh api timed out", "github-cli") from e
+
+        item = json.loads(result.stdout)
+        return Commit.from_raw(
+            sha=item["sha"],
+            message=item["commit"]["message"],
+            author=item["commit"]["author"]["name"],
+            date=_parse_iso_date(item["commit"]["author"]["date"]),
+        )
 
 
 # --- GitLab CLI ---
@@ -117,6 +143,31 @@ class GitLabCliCommitProvider:
             page += 1
 
         return commits
+
+    def fetch_commit(self, repo: RepositoryConfig, sha: str) -> Commit:
+        cmd = [
+            "glab", "api",
+            f"projects/{repo.repo_path_encoded}/repository/commits/{sha}",
+        ]
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=True, timeout=30
+            )
+        except subprocess.CalledProcessError as e:
+            raise ProviderError(
+                f"glab api failed (exit {e.returncode}): {e.stderr.strip()}",
+                "gitlab-cli",
+            ) from e
+        except subprocess.TimeoutExpired as e:
+            raise ProviderError("glab api timed out", "gitlab-cli") from e
+
+        item = json.loads(result.stdout)
+        return Commit.from_raw(
+            sha=item["id"],
+            message=item["message"],
+            author=item["author_name"],
+            date=_parse_iso_date(item["authored_date"]),
+        )
 
 
 # --- GitHub API ---
@@ -167,6 +218,29 @@ class GitHubApiCommitProvider:
 
         return commits
 
+    def fetch_commit(self, repo: RepositoryConfig, sha: str) -> Commit:
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/vnd.github+json",
+        }
+        try:
+            resp = requests.get(
+                f"https://api.github.com/repos/{repo.repo_path}/commits/{sha}",
+                headers=headers,
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise ProviderError(str(e), "github-api") from e
+
+        item = resp.json()
+        return Commit.from_raw(
+            sha=item["sha"],
+            message=item["commit"]["message"],
+            author=item["commit"]["author"]["name"],
+            date=_parse_iso_date(item["commit"]["author"]["date"]),
+        )
+
 
 # --- GitLab API ---
 
@@ -216,6 +290,28 @@ class GitLabApiCommitProvider:
             page += 1
 
         return commits
+
+    def fetch_commit(self, repo: RepositoryConfig, sha: str) -> Commit:
+        headers = {"PRIVATE-TOKEN": self.token}
+        parsed = urlparse(repo.url)
+        api_base = f"{parsed.scheme}://{parsed.hostname}/api/v4"
+        try:
+            resp = requests.get(
+                f"{api_base}/projects/{repo.repo_path_encoded}/repository/commits/{sha}",
+                headers=headers,
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise ProviderError(str(e), "gitlab-api") from e
+
+        item = resp.json()
+        return Commit.from_raw(
+            sha=item["id"],
+            message=item["message"],
+            author=item["author_name"],
+            date=_parse_iso_date(item["authored_date"]),
+        )
 
 
 # --- Factory ---
