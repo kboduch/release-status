@@ -33,10 +33,14 @@ Provider types (`_GitHubProvider`, `_GitLabProvider`) are Pydantic base classes 
 `--branch` flag doesn't thread through all layers. Instead, `cli.py` creates a modified `ProjectConfig` copy with overridden branch using Pydantic's `model_copy(update=...)`. All downstream code reads `repo.branch` and automatically gets the override. Zero changes needed in providers/cache/views.
 
 ### Fetched commits
-When a deployed SHA is not in the commit list (older than `since_days` OR on a different branch), it's fetched individually via `provider.fetch_commit(repo, sha)`. These commits have `fetched=True` and are displayed with `*` marker. The legend explains the marker. This happens in both `commits` and `envs` views.
+When a deployed SHA is not in the commit list, it's fetched individually via `provider.fetch_commit(repo, sha)`. Two scenarios cause this:
+- **Older than `since_days`**: the commit exists on the configured branch but is outside the time window
+- **Different branch**: the environment deploys from a branch other than the configured one (e.g. `dev` deploys from `develop` but config has `branch: main`)
+
+These commits have `fetched=True` and are displayed with `*` marker in both views. The legend below the table explains the marker.
 
 ### Cache TTL = 0 disables cache
-Instead of a separate "cache enabled" config field, `cache_ttl_minutes: 0` disables caching. `cli.py` also sets TTL to 0 when `--no-cache` flag is used. Views check `cache_ttl_minutes > 0` to show "disabled" in status line.
+Instead of a separate "cache enabled" config field, `cache_ttl_minutes: 0` disables caching. `cli.py:_make_cache()` sets `cache.enabled = False` when TTL is 0 or `--no-cache` flag is used. Views show "disabled" in status line when effective TTL is 0.
 
 ### Environment source fields map
 Each environment has a `source` with a `fields` map: `{ field_name: extraction_path }`. For JSON sources, values are JSONPath expressions (`$.version`). For regex sources, values are named group names (`version`). The `version` field is always required. All configured fields must be found in the response — missing field = error.
@@ -57,8 +61,11 @@ All fields are required (no hidden defaults):
 - `cache_ttl_minutes`: Cache TTL in minutes (0 = disabled)
 - `since_days`: How many days of commit history to fetch
 - `projects[]`: List of projects, each with `repository` and `environments`
+- `repository.branch`: Required, no default — user must specify explicitly
 
-Provider auth tokens are referenced by environment variable name (`token_env`), never stored directly.
+Provider auth tokens are referenced by environment variable name (`token_env`), never stored directly. Avoid naming env vars `GITLAB_TOKEN` — `glab` CLI reads it and overrides its own auth.
+
+`release-status init` generates a starter config showcasing every possible provider type and source type. When adding new providers or sources, update the starter config in `cli.py:init()` to include them.
 
 ## Conventions
 

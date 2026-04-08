@@ -70,6 +70,7 @@ release-status --since 60 commits MyProject   # look back 60 days instead of def
 | `--config`, `-c` | Path to config file |
 | `--no-cache` | Bypass cache for this run |
 | `--since` | Override days to look back for commits (default from config) |
+| `--branch`, `-b` | Override branch to fetch commits from |
 
 ### Views
 
@@ -243,7 +244,7 @@ At minimum, `fields` must contain `"version"` (the commit SHA). You can add extr
 
 Responses are cached for 5 minutes by default. Use `--no-cache` to bypass or `release-status clear-cache` to wipe.
 
-Both cache directory and TTL are configurable:
+Both cache directory and TTL are configurable. Set `cache_ttl_minutes` to `0` to disable caching permanently:
 
 ```json
 {
