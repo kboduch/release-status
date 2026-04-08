@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+from importlib.metadata import version as pkg_version
 from pydantic import ValidationError
 from rich.console import Console
 
@@ -49,8 +50,17 @@ def _complete_project(incomplete: str) -> list[str]:
         return []
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(pkg_version("release-status"))
+        raise typer.Exit()
+
+
 @app.callback()
 def main(
+    _version: Annotated[
+        bool, typer.Option("--version", "-v", help="Show version", callback=_version_callback, is_eager=True)
+    ] = False,
     config: Annotated[
         Optional[Path], typer.Option("--config", "-c", help="Path to config file")
     ] = None,
