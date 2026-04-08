@@ -42,7 +42,7 @@ def _render_status_line(
     )
     if has_fetched:
         console.print(
-            "  * fetched individually (not in commit history)",
+            f"  * fetched individually (older than {since_days} days or on a different branch)",
             style="dim yellow",
         )
     console.print()

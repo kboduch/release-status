@@ -373,3 +373,5 @@ def _fetch_missing_commits(
                 fetched=True,
             )
         )
+
+    commit_list.sort(key=lambda c: c.date, reverse=True)
