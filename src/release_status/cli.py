@@ -167,9 +167,9 @@ def init() -> None:
         "since_days": 180,
         "projects": [
             {
-                "name": "my-project",
+                "name": "project-github-cli",
                 "repository": {
-                    "url": "https://github.com/org/repo",
+                    "url": "https://github.com/org/repo.git",
                     "branch": "main",
                     "provider": {"type": "github-cli"},
                 },
@@ -183,8 +183,69 @@ def init() -> None:
                         },
                     }
                 ],
-            }
-        ]
+            },
+            {
+                "name": "project-github-api",
+                "repository": {
+                    "url": "https://github.com/org/repo.git",
+                    "branch": "main",
+                    "provider": {
+                        "type": "github-api",
+                        "token_env": "GITHUB_TOKEN",
+                    },
+                },
+                "environments": [
+                    {
+                        "name": "prod",
+                        "url": "https://prod.example.com/build.json",
+                        "source": {
+                            "type": "json",
+                            "fields": {"version": "$.version"},
+                        },
+                    }
+                ],
+            },
+            {
+                "name": "project-gitlab-cli",
+                "repository": {
+                    "url": "https://gitlab.com/org/repo.git",
+                    "branch": "main",
+                    "provider": {"type": "gitlab-cli"},
+                },
+                "environments": [
+                    {
+                        "name": "dev",
+                        "url": "https://dev.example.com/build.html",
+                        "source": {
+                            "type": "regex",
+                            "pattern": r"(.*)\t(?P<commit_time>.*)\n(?P<version>.*)\t(?P<pipeline_time>.*)",
+                            "fields": {"version": "version"},
+                        },
+                    }
+                ],
+            },
+            {
+                "name": "project-gitlab-api",
+                "repository": {
+                    "url": "https://gitlab.com/org/repo.git",
+                    "branch": "main",
+                    "provider": {
+                        "type": "gitlab-api",
+                        "token_env": "GITLAB_API_TOKEN",
+                    },
+                },
+                "environments": [
+                    {
+                        "name": "prod",
+                        "url": "https://prod.example.com/build.json",
+                        "source": {
+                            "type": "json",
+                            "fields": {"version": "$.version"},
+                        },
+                    }
+                ],
+            },
+        ],
     }
 
     path.parent.mkdir(parents=True, exist_ok=True)

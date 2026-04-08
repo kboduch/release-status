@@ -18,9 +18,11 @@ def test_init_creates_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert "Created config" in result.output
     assert config_path.exists()
 
-    config = json.loads(config_path.read_text())
-    assert "projects" in config
-    assert config["projects"][0]["name"] == "my-project"
+    from release_status.config import load_config
+    config = load_config(config_path)
+    assert len(config.projects) == 4
+    provider_types = [p.repository.provider.type for p in config.projects]
+    assert provider_types == ["github-cli", "github-api", "gitlab-cli", "gitlab-api"]
 
 
 def test_init_refuses_if_exists(tmp_path: Path) -> None:
