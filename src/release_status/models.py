@@ -29,6 +29,7 @@ class Commit:
         )
 
     def sha_matches(self, version: str) -> bool:
+        # Bidirectional: version can be full SHA, short SHA, or anything in between
         return self.sha.startswith(version) or version.startswith(self.short_sha)
 
 

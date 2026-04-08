@@ -7,6 +7,7 @@ from rich.text import Text
 from release_status.config import AppConfig, ProjectConfig
 from release_status.models import SHORT_SHA_LENGTH, Commit, EnvironmentStatus
 
+# Colors cycle by environment position index, consistent across both views
 ENV_COLORS = ["green", "yellow", "blue", "magenta", "cyan", "red"]
 
 

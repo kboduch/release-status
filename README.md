@@ -159,29 +159,40 @@ Repository URL should be the HTTPS clone URL (e.g. `https://github.com/org/repo.
 }
 ```
 
-### Providers
+### Repository providers
 
-| Type | Requires | Description |
-|------|----------|-------------|
-| `github-cli` | `gh` CLI installed and authenticated | Uses `gh api` to fetch commits |
-| `gitlab-cli` | `glab` CLI installed and authenticated | Uses `glab api` to fetch commits |
-| `github-api` | `token_env` set in config | Direct HTTP calls to GitHub API |
-| `gitlab-api` | `token_env` set in config | Direct HTTP calls to GitLab API |
+#### CLI providers
+
+| Type | CLI tool | Auth |
+|------|----------|------|
+| `github-cli` | [`gh`](https://cli.github.com/) | Uses `gh`'s own auth session (`gh auth login`) |
+| `gitlab-cli` | [`glab`](https://gitlab.com/gitlab-org/cli) | Uses `glab`'s own auth session (`glab auth login`) |
+
+CLI providers call `gh api` / `glab api` under the hood to fetch commit history. Authentication is handled by the CLI tool itself — no tokens needed in config. Make sure you're logged in (`gh auth login` / `glab auth login`) and have access to the repository. Verify with `gh auth status` / `glab auth status`.
+
+#### API providers
+
+| Type | Token scope | How to create |
+|------|-------------|---------------|
+| `github-api` | `repo` | https://github.com/settings/tokens → Generate new token (classic) |
+| `gitlab-api` | `read_api` | https://gitlab.com/-/user_settings/personal_access_tokens → Add new token |
 
 API providers reference an environment variable name (not the token itself):
 
 ```json
 {
   "type": "gitlab-api",
-  "token_env": "GITLAB_TOKEN"
+  "token_env": "MY_GITLAB_TOKEN"
 }
 ```
 
 Set the token in your shell profile:
 
 ```bash
-export GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
+export MY_GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
 ```
+
+Note: avoid using `GITLAB_TOKEN` as the env var name — `glab` CLI reads it and it will override `glab`'s own auth session.
 
 ### Environment sources
 

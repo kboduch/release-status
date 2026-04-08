@@ -184,6 +184,7 @@ class GitHubApiCommitProvider:
             "Accept": "application/vnd.github+json",
         }
         commits: list[Commit] = []
+        # GitHub public API lives at api.github.com, not github.com
         url: str | None = f"https://api.github.com/repos/{repo.repo_path}/commits"
         params: dict[str, str] = {
             "sha": repo.branch,
@@ -252,6 +253,7 @@ class GitLabApiCommitProvider:
     def fetch_commits(self, repo: RepositoryConfig, since_days: int) -> list[Commit]:
         since = _since_iso(since_days)
         headers = {"PRIVATE-TOKEN": self.token}
+        # GitLab API is at the same host as repo URL (works for self-hosted too)
         parsed = urlparse(repo.url)
         api_base = f"{parsed.scheme}://{parsed.hostname}/api/v4"
         commits: list[Commit] = []

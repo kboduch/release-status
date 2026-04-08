@@ -14,6 +14,7 @@ def resolve_environment(env_config: EnvironmentConfig) -> EnvironmentStatus:
     try:
         resp = requests.get(
             env_config.url,
+            # Bypass CDN/proxy caches to get fresh deploy info
             headers={"Cache-Control": "no-cache"},
             timeout=10,
         )
@@ -33,7 +34,7 @@ def resolve_environment(env_config: EnvironmentConfig) -> EnvironmentStatus:
             return _resolve_json(env_config.name, env_config.url, source, body)
         case RegexSource():
             return _resolve_regex(env_config.name, env_config.url, source, body)
-        case _:
+        case _:  # Defensive guard — Pydantic validates source types at config load
             return EnvironmentStatus.failure(
                 name=env_config.name,
                 url=env_config.url,

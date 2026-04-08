@@ -233,6 +233,8 @@ def _make_cache(config: AppConfig) -> Cache:
 
 
 def _apply_branch_override(proj: ProjectConfig) -> ProjectConfig:
+    # Uses Pydantic model_copy to create a modified config — all downstream code
+    # (providers, cache keys, views) reads repo.branch and gets the override automatically
     if _state.branch:
         repo = proj.repository.model_copy(update={"branch": _state.branch})
         return proj.model_copy(update={"repository": repo})
@@ -328,7 +330,12 @@ def _fetch_missing_commits(
     proj: ProjectConfig,
     cache: Cache,
 ) -> None:
-    """Fetch individual commits for deployed SHAs not in the commit list."""
+    """Fetch individual commits for deployed SHAs not in the commit list.
+
+    This happens when a deployed version is older than since_days or on a
+    different branch. Fetched commits are marked with fetched=True and sorted
+    into the list by datetime.
+    """
     for env in env_statuses:
         if not env.version or any(c.sha_matches(env.version) for c in commit_list):
             continue
