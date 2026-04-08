@@ -9,8 +9,8 @@ from release_status.models import SHORT_SHA_LENGTH, Commit, EnvironmentStatus
 
 # Colors cycle by environment position index, consistent across both views
 ENV_COLORS = [
-    "#ff595e", "#ff924c", "#ffca3a", "#c5ca30", "#8ac926",
-    "#52a675", "#1982c4", "#4267ac", "#6a4c93", "#b5a6c9",
+    "#e6194b", "#3cb44b", "#e6b822", "#4363d8", "#f58231",
+    "#911eb4", "#46f0f0", "#f032e6", "#bcf60c", "#fabebe",
 ]
 
 
