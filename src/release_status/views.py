@@ -27,8 +27,9 @@ def _find_commit(commits: list[Commit], version: str) -> Commit | None:
 def _render_status_line(
     since_days: int, cache_ttl_minutes: int, console: Console
 ) -> None:
+    cache_info = f"{cache_ttl_minutes}m" if cache_ttl_minutes > 0 else "disabled"
     console.print(
-        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_ttl_minutes}m",
+        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info}",
         style="dim",
     )
     console.print()
@@ -112,7 +113,8 @@ def render_environments(
         if env.error:
             status = Text()
             status.append("ERROR", style=f"bold red link {env.url}")
-            table.add_row(env_name, "---", status, env.error)
+            error_text = Text(env.error, style="not dim red")
+            table.add_row(env_name, "---", status, error_text)
         elif env.version:
             sha_display = _sha_text(
                 env.version[:SHORT_SHA_LENGTH], env.version, project
@@ -134,6 +136,7 @@ def render_environments(
 
 def render_projects(config: AppConfig, console: Console | None = None) -> None:
     console = console or Console()
+    console.print()
     table = Table(title="Configured Projects")
     table.add_column("Project", style="bold")
     table.add_column("Provider", style="cyan")
@@ -149,3 +152,4 @@ def render_projects(config: AppConfig, console: Console | None = None) -> None:
             env_names,
         )
     console.print(table)
+    console.print()

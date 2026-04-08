@@ -75,6 +75,7 @@ def commits(
     proj = _find_project(cfg, project)
     cache = _make_cache(cfg)
     since = _since_days(cfg)
+    cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
 
     with console.status("Fetching commits..."):
         commit_list = _fetch_commits(proj, cache, since)
@@ -83,7 +84,7 @@ def commits(
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_commits(proj, commit_list, env_statuses, since, cfg.cache_ttl_minutes, console)
+    render_commits(proj, commit_list, env_statuses, since, cache_ttl, console)
 
 
 @app.command()
@@ -95,13 +96,14 @@ def envs(
     proj = _find_project(cfg, project)
     cache = _make_cache(cfg)
     since = _since_days(cfg)
+    cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
 
     with console.status("Fetching data..."):
         commit_list = _fetch_commits(proj, cache, since)
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_environments(proj, commit_list, env_statuses, since, cfg.cache_ttl_minutes, console)
+    render_environments(proj, commit_list, env_statuses, since, cache_ttl, console)
 
 
 @app.command()
@@ -221,7 +223,7 @@ def _make_cache(config: AppConfig) -> Cache:
         cache_dir=config.cache_dir,
         ttl=timedelta(minutes=config.cache_ttl_minutes),
     )
-    cache.enabled = not _state.no_cache
+    cache.enabled = not _state.no_cache and config.cache_ttl_minutes > 0
     return cache
 
 
