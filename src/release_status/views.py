@@ -88,11 +88,15 @@ def render_commits(
                 env_text.append(" ")
             env_text.append(f" {ename} ", style=f"bold white on {ecolor} link {eurl}")
 
+        message_text = Text(commit.message[:80])
+        if commit.message.startswith("Merge branch "):
+            message_text.stylize("dark_goldenrod")
+
         table.add_row(
             sha_text,
             commit.date.strftime("%Y-%m-%d"),
             commit.author,
-            commit.message[:60],
+            message_text,
             env_text,
         )
 
