@@ -37,6 +37,7 @@ def test_missing_version_field_in_json_source(tmp_path: Path) -> None:
                 "name": "Bad",
                 "repository": {
                     "url": "https://github.com/org/repo.git",
+                    "branch": "main",
                     "provider": {"type": "github-cli"},
                 },
                 "environments": [
@@ -68,6 +69,7 @@ def test_regex_invalid_group_reference(tmp_path: Path) -> None:
                 "name": "Bad",
                 "repository": {
                     "url": "https://github.com/org/repo.git",
+                    "branch": "main",
                     "provider": {"type": "github-cli"},
                 },
                 "environments": [
@@ -100,6 +102,7 @@ def test_regex_invalid_pattern(tmp_path: Path) -> None:
                 "name": "Bad",
                 "repository": {
                     "url": "https://github.com/org/repo.git",
+                    "branch": "main",
                     "provider": {"type": "github-cli"},
                 },
                 "environments": [
@@ -154,6 +157,7 @@ def test_discriminated_provider_types(tmp_path: Path) -> None:
                 "name": "GitLabAPI",
                 "repository": {
                     "url": "https://gitlab.com/org/repo.git",
+                    "branch": "main",
                     "provider": {
                         "type": "gitlab-api",
                         "token_env": "MY_TOKEN",

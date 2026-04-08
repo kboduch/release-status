@@ -109,7 +109,7 @@ class EnvironmentConfig(BaseModel):
 
 class RepositoryConfig(BaseModel):
     url: str
-    branch: str = "main"
+    branch: str
     provider: Provider
 
     @property
