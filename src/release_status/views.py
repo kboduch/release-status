@@ -8,7 +8,10 @@ from release_status.config import AppConfig, ProjectConfig
 from release_status.models import SHORT_SHA_LENGTH, Commit, EnvironmentStatus
 
 # Colors cycle by environment position index, consistent across both views
-ENV_COLORS = ["green", "yellow", "blue", "magenta", "cyan", "red"]
+ENV_COLORS = [
+    "#ff595e", "#ff924c", "#ffca3a", "#c5ca30", "#8ac926",
+    "#52a675", "#1982c4", "#4267ac", "#6a4c93", "#b5a6c9",
+]
 
 
 def _sha_text(
