@@ -117,7 +117,7 @@ def render_environments(
     table.add_column("Environment", style="bold")
     table.add_column("SHA", style="cyan")
     table.add_column("Status", justify="center")
-    table.add_column("Commit Info", style="dim")
+    table.add_column("Commit Info", style="dim", ratio=1)
 
     for i, env in enumerate(environments):
         color = ENV_COLORS[i % len(ENV_COLORS)]
@@ -135,7 +135,7 @@ def render_environments(
             commit_info = ""
             if matching:
                 commit_info = (
-                    f"{matching.date.strftime('%Y-%m-%d')} {matching.message[:40]}"
+                    f"{matching.date.strftime('%Y-%m-%d')} {matching.message}"
                 )
             table.add_row(env_name, sha_display, Text("OK", style="bold green"), commit_info)
 
