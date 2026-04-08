@@ -12,7 +12,11 @@ from release_status.models import EnvironmentStatus
 
 def resolve_environment(env_config: EnvironmentConfig) -> EnvironmentStatus:
     try:
-        resp = requests.get(env_config.url, timeout=10)
+        resp = requests.get(
+            env_config.url,
+            headers={"Cache-Control": "no-cache"},
+            timeout=10,
+        )
         resp.raise_for_status()
     except (requests.RequestException, ConnectionError, OSError) as e:
         return EnvironmentStatus.failure(
