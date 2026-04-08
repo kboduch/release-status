@@ -13,15 +13,19 @@ class Commit:
     message: str
     author: str
     date: datetime
+    fetched: bool = False
 
     @classmethod
-    def from_raw(cls, sha: str, message: str, author: str, date: datetime) -> Commit:
+    def from_raw(
+        cls, sha: str, message: str, author: str, date: datetime, fetched: bool = False
+    ) -> Commit:
         return cls(
             sha=sha,
             short_sha=sha[:SHORT_SHA_LENGTH],
             message=message.split("\n", 1)[0],
             author=author,
             date=date,
+            fetched=fetched,
         )
 
     def sha_matches(self, version: str) -> bool:

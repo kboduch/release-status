@@ -34,6 +34,7 @@ class _State:
     config_path: Path | None = None
     no_cache: bool = False
     since_days: int | None = None
+    branch: str | None = None
 
 
 _state = _State()
@@ -59,11 +60,15 @@ def main(
     since: Annotated[
         Optional[int], typer.Option("--since", help="Override days to look back for commits")
     ] = None,
+    branch: Annotated[
+        Optional[str], typer.Option("--branch", "-b", help="Override branch to fetch commits from")
+    ] = None,
 ) -> None:
     """Release Status — deployment tracking across projects."""
     _state.config_path = config
     _state.no_cache = no_cache
     _state.since_days = since
+    _state.branch = branch
 
 
 @app.command()
@@ -72,7 +77,7 @@ def commits(
 ) -> None:
     """Show recent commits with environment deployment markers."""
     cfg = _load_config()
-    proj = _find_project(cfg, project)
+    proj = _apply_branch_override(_find_project(cfg, project))
     cache = _make_cache(cfg)
     since = _since_days(cfg)
     cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
@@ -93,7 +98,7 @@ def envs(
 ) -> None:
     """Show environment deployment status."""
     cfg = _load_config()
-    proj = _find_project(cfg, project)
+    proj = _apply_branch_override(_find_project(cfg, project))
     cache = _make_cache(cfg)
     since = _since_days(cfg)
     cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
@@ -227,6 +232,13 @@ def _make_cache(config: AppConfig) -> Cache:
     return cache
 
 
+def _apply_branch_override(proj: ProjectConfig) -> ProjectConfig:
+    if _state.branch:
+        repo = proj.repository.model_copy(update={"branch": _state.branch})
+        return proj.model_copy(update={"repository": repo})
+    return proj
+
+
 def _since_days(config: AppConfig) -> int:
     return _state.since_days if _state.since_days is not None else config.since_days
 
@@ -331,6 +343,7 @@ def _fetch_missing_commits(
                     message=cached["message"],
                     author=cached["author"],
                     date=datetime.fromisoformat(cached["date"]),
+                    fetched=True,
                 )
             )
             continue
@@ -351,4 +364,12 @@ def _fetch_missing_commits(
                 "date": commit.date.isoformat(),
             },
         )
-        commit_list.append(commit)
+        commit_list.append(
+            Commit.from_raw(
+                sha=commit.sha,
+                message=commit.message,
+                author=commit.author,
+                date=commit.date,
+                fetched=True,
+            )
+        )

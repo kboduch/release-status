@@ -10,10 +10,14 @@ from release_status.models import SHORT_SHA_LENGTH, Commit, EnvironmentStatus
 ENV_COLORS = ["green", "yellow", "blue", "magenta", "cyan", "red"]
 
 
-def _sha_text(short_sha: str, full_sha: str, project: ProjectConfig) -> Text:
+def _sha_text(
+    short_sha: str, full_sha: str, project: ProjectConfig, fetched: bool = False
+) -> Text:
     url = project.repository.provider.commit_url(project.repository.base_url, full_sha)
     text = Text()
     text.append(short_sha, style=f"link {url}")
+    if fetched:
+        text.append("*", style="yellow")
     return text
 
 
@@ -25,13 +29,22 @@ def _find_commit(commits: list[Commit], version: str) -> Commit | None:
 
 
 def _render_status_line(
-    since_days: int, cache_ttl_minutes: int, console: Console
+    since_days: int,
+    cache_ttl_minutes: int,
+    branch: str,
+    has_fetched: bool,
+    console: Console,
 ) -> None:
     cache_info = f"{cache_ttl_minutes}m" if cache_ttl_minutes > 0 else "disabled"
     console.print(
-        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info}",
+        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info} | 🌿 Branch: {branch}",
         style="dim",
     )
+    if has_fetched:
+        console.print(
+            "  * fetched individually (not in commit history)",
+            style="dim yellow",
+        )
     console.print()
 
 
@@ -63,7 +76,7 @@ def render_commits(
                     break
 
     for commit in commits:
-        sha_text = _sha_text(commit.short_sha, commit.sha, project)
+        sha_text = _sha_text(commit.short_sha, commit.sha, project, commit.fetched)
         envs = sha_envs.get(commit.sha, [])
         env_text = Text()
         for j, (ename, ecolor, eurl) in enumerate(envs):
@@ -87,7 +100,7 @@ def render_commits(
                 f"  [red]ERROR[/red] {env.name}: {env.error} (url: {env.url})"
             )
 
-    _render_status_line(since_days, cache_ttl_minutes, console)
+    _render_status_line(since_days, cache_ttl_minutes, project.repository.branch, any(c.fetched for c in commits), console)
 
 
 def render_environments(
@@ -114,10 +127,11 @@ def render_environments(
             error_text = Text(env.error, style="not dim red")
             table.add_row(env_name, "---", Text("ERROR", style="bold red"), error_text)
         elif env.version:
-            sha_display = _sha_text(
-                env.version[:SHORT_SHA_LENGTH], env.version, project
-            )
             matching = _find_commit(commits, env.version)
+            fetched = matching.fetched if matching else False
+            sha_display = _sha_text(
+                env.version[:SHORT_SHA_LENGTH], env.version, project, fetched
+            )
             commit_info = ""
             if matching:
                 commit_info = (
@@ -127,7 +141,7 @@ def render_environments(
 
     console.print(table)
 
-    _render_status_line(since_days, cache_ttl_minutes, console)
+    _render_status_line(since_days, cache_ttl_minutes, project.repository.branch, any(c.fetched for c in commits), console)
 
 
 def render_projects(config: AppConfig, console: Console | None = None) -> None:

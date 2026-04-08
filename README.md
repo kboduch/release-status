@@ -71,6 +71,33 @@ release-status --since 60 commits MyProject   # look back 60 days instead of def
 | `--no-cache` | Bypass cache for this run |
 | `--since` | Override days to look back for commits (default from config) |
 
+### Views
+
+**`commits`** — recent commits with deployment markers:
+
+| Column | Description |
+|--------|-------------|
+| SHA | Commit hash, clickable link to the commit in the repository |
+| Date | Commit date |
+| Author | Commit author |
+| Message | First line of commit message |
+| Deployed | Colored environment badges showing which environments have this commit deployed. Each badge is a clickable link to the environment's build URL |
+
+If an environment has a fetch error, it's shown below the table.
+
+**`envs`** — environment deployment status:
+
+| Column | Description |
+|--------|-------------|
+| Environment | Colored badge with environment name, clickable link to the build URL |
+| SHA | Deployed commit hash, clickable link to the commit in the repository |
+| Status | `OK` if version was extracted successfully, `ERROR` if the fetch or extraction failed |
+| Commit Info | Commit date and message when status is `OK`. Error details in red when status is `ERROR` |
+
+If a deployed commit is not in the commit history (older than `since_days` or on a different branch), it's fetched individually. These commits are marked with `*` next to the SHA in both views, with a legend shown below the table.
+
+Both views show a status line below the table with the `since_days` value and cache TTL.
+
 ### Shell completion
 
 Tab completion works for commands, options, and project names from your config.
