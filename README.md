@@ -14,7 +14,7 @@ Requires Python 3.13+.
 
 ```bash
 # Install globally via uv
-uv tool install git+https://github.com/<user>/project_release_status
+uv tool install git+https://github.com/kboduch/release-status.git
 
 # Uninstall
 uv tool uninstall release-status
