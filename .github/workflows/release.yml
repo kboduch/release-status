@@ -27,19 +27,19 @@ jobs:
             exit 1
           fi
 
-      - name: Bump version in pyproject.toml
-        run: sed -i 's/^version = ".*"/version = "${{ inputs.version }}"/' pyproject.toml
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Bump version
+        run: uv version "${{ inputs.version }}"
 
       - name: Commit and tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml
+          git add pyproject.toml uv.lock
           git commit -m "Bump version to ${{ inputs.version }}"
           git tag "v${{ inputs.version }}"
           git push origin master --tags
-
-      - uses: astral-sh/setup-uv@v7
 
       - name: Build and publish to PyPI
         run: uv build && uv publish
