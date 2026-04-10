@@ -12,6 +12,7 @@ resolvers.py    Fetches build endpoints and extracts version via JSONPath or reg
 cache.py        File-based cache with TTL. SHA256-hashed keys.
 views.py        Rich terminal tables for commits and environments views.
 models.py       Frozen dataclasses (Commit, EnvironmentStatus) and exceptions.
+version.py      Version check against PyPI. Independent 24h cache.
 ```
 
 ## Data Flow
@@ -75,6 +76,12 @@ Provider auth tokens are referenced by environment variable name (`token_env`), 
 - Links: SHA links to commit in repo, environment badges link to build URL
 - Regex sources: pattern must contain named group matching each field value in `fields` map
 - Cache keys: `"commits:{provider_type}:{url}:{branch}:{since}"` and `"env:{url}"` and `"commit:{sha}"`
+
+### Version check & self-update
+`version.py` checks PyPI JSON API (`/pypi/release-status/json`) for newer versions. Results cached 24h at `~/.cache/release-status/version-check.json` (independent of project config). Fail-safe: any error silently returns None. Version displayed in status line of `commits` and `envs` commands. `release-status update` runs `uv tool install release-status --force --reinstall`.
+
+### Releasing
+Run `gh workflow run release.yml -f version=X.Y.Z`. The workflow validates version format, checks it's newer than current, bumps pyproject.toml, commits, tags, builds, publishes to PyPI, and creates a GitHub Release with auto-generated notes. Requires `PYPI_TOKEN` secret in repo settings.
 
 ## Development
 

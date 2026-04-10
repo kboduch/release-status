@@ -13,11 +13,22 @@ SHAs in the output are clickable links to the commit in the repository (in termi
 Requires Python 3.13+.
 
 ```bash
-# Install globally via uv
-uv tool install git+https://github.com/kboduch/release-status.git
+# Install globally via uv (recommended — isolated environment)
+uv tool install release-status
+
+# Or via pip
+pip install release-status
+
+# Update to latest
+release-status update
+
+# Or manual update
+uv tool install release-status --force --reinstall
+pip install --upgrade release-status
 
 # Uninstall
 uv tool uninstall release-status
+pip uninstall release-status
 
 # Or run from the cloned repo (development)
 uv sync
@@ -271,3 +282,22 @@ uv tool install . --force --reinstall
 ```
 
 `--force` alone may use a cached wheel. `--reinstall` forces a rebuild.
+
+## Releasing
+
+Releases are automated via GitHub Actions. To publish a new version:
+
+```bash
+gh workflow run release.yml -f version=1.2.0
+```
+
+Or trigger "Release" workflow from the GitHub Actions UI with the version number.
+
+The workflow will:
+1. Validate the version format (semver)
+2. Check that the new version is newer than the current one in `pyproject.toml`
+3. Bump the version in `pyproject.toml`, commit, and tag
+4. Build and publish to PyPI
+5. Create a GitHub Release with auto-generated notes
+
+**Prerequisites:** `PYPI_TOKEN` secret must be configured in the repository settings.

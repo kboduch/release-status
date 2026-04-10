@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Optional
@@ -21,6 +23,7 @@ from release_status.config import (
 from release_status.models import Commit, EnvironmentStatus, ProviderError, ToolNotFoundError
 from release_status.providers import check_cli_tools, get_provider
 from release_status.resolvers import resolve_environment
+from release_status.version import check_for_update, check_for_update_strict, clear_update_cache, get_current_version, PACKAGE_NAME
 from release_status.views import render_commits, render_environments, render_projects
 
 app = typer.Typer(
@@ -91,15 +94,17 @@ def commits(
     cache = _make_cache(cfg)
     since = _since_days(cfg)
     cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
+    current_version = get_current_version()
 
     with console.status("Fetching commits..."):
+        update_available = check_for_update(current_version)
         commit_list = _fetch_commits(proj, cache, since)
 
     with console.status("Checking environments..."):
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_commits(proj, commit_list, env_statuses, since, cache_ttl, console)
+    render_commits(proj, commit_list, env_statuses, since, cache_ttl, console, current_version, update_available)
 
 
 @app.command()
@@ -112,13 +117,15 @@ def envs(
     cache = _make_cache(cfg)
     since = _since_days(cfg)
     cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
+    current_version = get_current_version()
 
     with console.status("Fetching data..."):
+        update_available = check_for_update(current_version)
         commit_list = _fetch_commits(proj, cache, since)
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_environments(proj, commit_list, env_statuses, since, cache_ttl, console)
+    render_environments(proj, commit_list, env_statuses, since, cache_ttl, console, current_version, update_available)
 
 
 @app.command()
@@ -161,6 +168,39 @@ def clear_cache() -> None:
     cfg = _load_config()
     count = _make_cache(cfg).clear()
     console.print(f"Cleared {count} cache entries.")
+
+
+@app.command()
+def update() -> None:
+    """Update release-status to the latest version."""
+    current = get_current_version()
+    update_version, check_ok = check_for_update_strict(current)
+
+    if not update_version:
+        if check_ok:
+            console.print(f"Already up to date (v{current}).")
+        else:
+            console.print(f"[red]Could not check for updates.[/red] Current version: v{current}")
+        raise typer.Exit()
+
+    if not shutil.which("uv"):
+        console.print("[red]uv not found.[/red] Install it from https://docs.astral.sh/uv/")
+        console.print(f"Or update manually: pip install --upgrade {PACKAGE_NAME}")
+        raise typer.Exit(1)
+
+    console.print(f"Updating: v{current} → v{update_version}")
+    result = subprocess.run(
+        ["uv", "tool", "install", PACKAGE_NAME, "--force", "--reinstall"],
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode == 0:
+        clear_update_cache()
+        console.print(f"[green]Updated to v{update_version}.[/green]")
+    else:
+        console.print(f"[red]Update failed:[/red]\n{result.stderr.strip()}")
+        raise typer.Exit(1)
 
 
 @app.command()

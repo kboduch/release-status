@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.0.0)"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version format
+        run: echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+      - name: Check version is newer than current
+        run: |
+          current=$(grep '^version' pyproject.toml | sed 's/.*"\(.*\)"/\1/')
+          newest=$(printf '%s\n%s' "$current" "${{ inputs.version }}" | sort -V | tail -1)
+          if [ "$newest" != "${{ inputs.version }}" ] || [ "$newest" = "$current" ]; then
+            echo "::error::Version ${{ inputs.version }} is not newer than current ($current)"
+            exit 1
+          fi
+
+      - name: Bump version in pyproject.toml
+        run: sed -i 's/^version = ".*"/version = "${{ inputs.version }}"/' pyproject.toml
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          git commit -m "Bump version to ${{ inputs.version }}"
+          git tag "v${{ inputs.version }}"
+          git push origin master --tags
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Build and publish to PyPI
+        run: uv build && uv publish
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Create GitHub Release
+        run: gh release create "v${{ inputs.version }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

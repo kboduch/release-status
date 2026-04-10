@@ -38,16 +38,26 @@ def _render_status_line(
     branch: str,
     has_fetched: bool,
     console: Console,
+    current_version: str = "",
+    update_available: str | None = None,
 ) -> None:
     cache_info = f"{cache_ttl_minutes}m" if cache_ttl_minutes > 0 else "disabled"
+    version_prefix = f"v{current_version} | " if current_version else ""
     console.print(
-        f"  📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info} | 🌿 Branch: {branch}",
+        f"  {version_prefix}📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info} | 🌿 Branch: {branch}",
         style="dim",
     )
     if has_fetched:
         console.print(
             f"  * fetched individually (older than {since_days} days or on a different branch)",
             style="dim yellow",
+        )
+    if update_available:
+        console.print(
+            f"  [bold yellow]Update available: v{update_available}[/bold yellow]"
+            f" (current: v{current_version})."
+            f" Run: release-status update",
+            style="dim",
         )
     console.print()
 
@@ -59,6 +69,8 @@ def render_commits(
     since_days: int,
     cache_ttl_minutes: int,
     console: Console | None = None,
+    current_version: str = "",
+    update_available: str | None = None,
 ) -> None:
     console = console or Console()
     console.print()
@@ -108,7 +120,11 @@ def render_commits(
                 f"  [red]ERROR[/red] {env.name}: {env.error} (url: {env.url})"
             )
 
-    _render_status_line(since_days, cache_ttl_minutes, project.repository.branch, any(c.fetched for c in commits), console)
+    _render_status_line(
+        since_days, cache_ttl_minutes, project.repository.branch,
+        any(c.fetched for c in commits), console,
+        current_version, update_available,
+    )
 
 
 def render_environments(
@@ -118,6 +134,8 @@ def render_environments(
     since_days: int,
     cache_ttl_minutes: int,
     console: Console | None = None,
+    current_version: str = "",
+    update_available: str | None = None,
 ) -> None:
     console = console or Console()
     console.print()
@@ -149,7 +167,11 @@ def render_environments(
 
     console.print(table)
 
-    _render_status_line(since_days, cache_ttl_minutes, project.repository.branch, any(c.fetched for c in commits), console)
+    _render_status_line(
+        since_days, cache_ttl_minutes, project.repository.branch,
+        any(c.fetched for c in commits), console,
+        current_version, update_available,
+    )
 
 
 def render_projects(config: AppConfig, console: Console | None = None) -> None:
