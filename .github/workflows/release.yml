@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Validate version format
         run: echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'
@@ -39,7 +39,7 @@ jobs:
           git tag "v${{ inputs.version }}"
           git push origin master --tags
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
 
       - name: Build and publish to PyPI
         run: uv build && uv publish
