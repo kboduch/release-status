@@ -416,7 +416,7 @@ def _fetch_environments(
 ) -> list[EnvironmentStatus]:
     results: list[EnvironmentStatus] = []
     for env_config in proj.environments:
-        key = f"env:{env_config.url}"
+        key = f"env:{env_config.name}:{env_config.url}"
         cached = cache.get_env(key)
         if cached is not None:
             results.append(
@@ -460,7 +460,7 @@ def _fetch_missing_commits(
         if not env.version or any(c.sha_matches(env.version) for c in commit_list):
             continue
 
-        key = f"commit:{env.version}"
+        key = f"commit:{proj.repository.url}:{env.version}"
         cached = cache.get_git(key)
         if cached is not None:
             commit_list.append(

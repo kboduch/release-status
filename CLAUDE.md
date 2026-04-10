@@ -76,7 +76,7 @@ Provider auth tokens are referenced by environment variable name (`token_env`), 
 - Environment colors: cycle through `ENV_COLORS` list by position index
 - Links: SHA links to commit in repo, environment badges link to build URL
 - Regex sources: pattern must contain named group matching each field value in `fields` map
-- Cache keys: `"commits:{provider_type}:{url}:{branch}:{since}"` and `"env:{url}"` and `"commit:{sha}"`
+- Cache keys: `"commits:{provider_type}:{url}:{branch}:{since}"` and `"env:{name}:{url}"` and `"commit:{repo_url}:{sha}"`
 
 ### Version check & self-update
 `version.py` checks PyPI JSON API (`/pypi/release-status/json`) for newer versions. Results cached 24h at `~/.cache/release-status/version-check.json` (independent of project config). Fail-safe: any error silently returns None. Version displayed in status line of `commits` and `envs` commands. `release-status update` runs `uv tool install release-status --force --reinstall`.
