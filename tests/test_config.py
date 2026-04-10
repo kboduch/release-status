@@ -6,10 +6,13 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from datetime import timedelta
+
 from release_status.config import (
     AppConfig,
     generate_schema,
     load_config,
+    parse_duration,
     resolve_config_path,
 )
 
@@ -30,7 +33,8 @@ def test_load_missing_file() -> None:
 def test_missing_version_field_in_json_source(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {
@@ -62,7 +66,8 @@ def test_missing_version_field_in_json_source(tmp_path: Path) -> None:
 def test_regex_invalid_group_reference(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {
@@ -95,7 +100,8 @@ def test_regex_invalid_group_reference(tmp_path: Path) -> None:
 def test_regex_invalid_pattern(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {
@@ -150,7 +156,8 @@ def test_resolve_config_path_default(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_discriminated_provider_types(tmp_path: Path) -> None:
     config = {
         "cache_dir": str(tmp_path / "cache"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {
@@ -181,3 +188,46 @@ def test_discriminated_provider_types(tmp_path: Path) -> None:
     cfg = load_config(path)
     assert cfg.projects[0].repository.provider.type == "gitlab-api"
     assert cfg.projects[0].repository.provider.token_env == "MY_TOKEN"
+
+
+# --- parse_duration ---
+
+
+def test_parse_duration_seconds() -> None:
+    assert parse_duration("30s") == timedelta(seconds=30)
+
+
+def test_parse_duration_minutes() -> None:
+    assert parse_duration("5m") == timedelta(minutes=5)
+
+
+def test_parse_duration_hours() -> None:
+    assert parse_duration("1h") == timedelta(hours=1)
+
+
+def test_parse_duration_zero() -> None:
+    assert parse_duration("0s") == timedelta(0)
+
+
+def test_parse_duration_invalid() -> None:
+    with pytest.raises(ValueError, match="Invalid duration"):
+        parse_duration("5x")
+
+
+def test_parse_duration_missing_unit() -> None:
+    with pytest.raises(ValueError, match="Invalid duration"):
+        parse_duration("30")
+
+
+def test_invalid_ttl_in_config(tmp_path: Path) -> None:
+    config = {
+        "cache_dir": str(tmp_path / "cache"),
+        "git_cache_ttl": "bad",
+        "env_cache_ttl": "30s",
+        "since_days": 180,
+        "projects": [],
+    }
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValidationError, match="Invalid duration"):
+        load_config(path)

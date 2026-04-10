@@ -5,6 +5,7 @@ import os
 import re
 from pathlib import Path
 from typing import Annotated, Literal
+from datetime import timedelta
 from urllib.parse import quote_plus, urlparse
 
 from pydantic import BaseModel, Field, model_validator
@@ -145,11 +146,33 @@ class ProjectConfig(BaseModel):
 # --- Root config ---
 
 
+def parse_duration(value: str) -> timedelta:
+    """Parse duration string like '30s', '5m', '1h' into timedelta."""
+    match = re.match(r"^(\d+)(s|m|h)$", value)
+    if not match:
+        raise ValueError(f"Invalid duration: '{value}'. Use format like '30s', '5m', '1h'")
+    amount = int(match.group(1))
+    unit = match.group(2)
+    if unit == "s":
+        return timedelta(seconds=amount)
+    elif unit == "m":
+        return timedelta(minutes=amount)
+    else:
+        return timedelta(hours=amount)
+
+
 class AppConfig(BaseModel):
     cache_dir: Path
-    cache_ttl_minutes: int
+    git_cache_ttl: str
+    env_cache_ttl: str
     since_days: int
     projects: list[ProjectConfig]
+
+    @model_validator(mode="after")
+    def validate_ttls(self) -> AppConfig:
+        parse_duration(self.git_cache_ttl)
+        parse_duration(self.env_cache_ttl)
+        return self
 
 
 # --- Loading ---

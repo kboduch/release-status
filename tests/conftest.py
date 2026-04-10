@@ -15,7 +15,8 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 def sample_config_path(tmp_path: Path) -> Path:
     config = {
         "cache_dir": str(tmp_path / "cache"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {

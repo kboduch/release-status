@@ -138,7 +138,8 @@ Repository URL should be the HTTPS clone URL (e.g. `https://github.com/org/repo.
 ```json
 {
   "cache_dir": "~/.cache/release-status",
-  "cache_ttl_minutes": 5,
+  "git_cache_ttl": "5m",
+  "env_cache_ttl": "30s",
   "since_days": 180,
   "projects": [
     {
@@ -253,18 +254,19 @@ At minimum, `fields` must contain `"version"` (the commit SHA). You can add extr
 
 ### Caching
 
-Responses are cached for 5 minutes by default. Use `--no-cache` to bypass or `release-status clear-cache` to wipe.
-
-Both cache directory and TTL are configurable. Set `cache_ttl_minutes` to `0` to disable caching permanently:
+Git history and environment status have separate cache TTLs. Use duration format: `"30s"`, `"5m"`, `"1h"`. Use `--no-cache` to bypass or `release-status clear-cache` to wipe.
 
 ```json
 {
   "cache_dir": "/tmp/my-release-cache",
-  "cache_ttl_minutes": 5,
+  "git_cache_ttl": "5m",
+  "env_cache_ttl": "30s",
   "since_days": 180,
   "projects": [...]
 }
 ```
+
+Set a TTL to `"0s"` to effectively disable caching for that type.
 
 ## Development
 

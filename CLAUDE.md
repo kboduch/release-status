@@ -40,8 +40,8 @@ When a deployed SHA is not in the commit list, it's fetched individually via `pr
 
 These commits have `fetched=True` and are displayed with `*` marker in both views. The legend below the table explains the marker.
 
-### Cache TTL = 0 disables cache
-Instead of a separate "cache enabled" config field, `cache_ttl_minutes: 0` disables caching. `cli.py:_make_cache()` sets `cache.enabled = False` when TTL is 0 or `--no-cache` flag is used. Views show "disabled" in status line when effective TTL is 0.
+### Separate cache TTLs
+Git history and env status have separate TTLs (`git_cache_ttl`, `env_cache_ttl`) using duration format (`"30s"`, `"5m"`, `"1h"`). `parse_duration()` in `config.py` converts to timedelta. `Cache` class has `get_git()` and `get_env()` methods, each using its own TTL. `--no-cache` disables all caching. TTL `"0s"` means always expired (effectively disabled for that type).
 
 ### Environment source fields map
 Each environment has a `source` with a `fields` map: `{ field_name: extraction_path }`. For JSON sources, values are JSONPath expressions (`$.version`). For regex sources, values are named group names (`version`). The `version` field is always required. All configured fields must be found in the response — missing field = error.
@@ -59,7 +59,8 @@ Build endpoints (`build.json`, `build.html`) are public. No auth needed. Request
 
 All fields are required (no hidden defaults):
 - `cache_dir`: Path to cache directory
-- `cache_ttl_minutes`: Cache TTL in minutes (0 = disabled)
+- `git_cache_ttl`: TTL for git history cache, duration string (`"5m"`, `"1h"`, `"0s"` = disabled)
+- `env_cache_ttl`: TTL for environment status cache, duration string (`"30s"`, `"5m"`)
 - `since_days`: How many days of commit history to fetch
 - `projects[]`: List of projects, each with `repository` and `environments`
 - `repository.branch`: Required, no default — user must specify explicitly

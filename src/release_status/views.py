@@ -34,17 +34,16 @@ def _find_commit(commits: list[Commit], version: str) -> Commit | None:
 
 def _render_status_line(
     since_days: int,
-    cache_ttl_minutes: int,
+    cache_info: str,
     branch: str,
     has_fetched: bool,
     console: Console,
     current_version: str = "",
     update_available: str | None = None,
 ) -> None:
-    cache_info = f"{cache_ttl_minutes}m" if cache_ttl_minutes > 0 else "disabled"
     version_prefix = f"v{current_version} | " if current_version else ""
     console.print(
-        f"  {version_prefix}📅 Since: {since_days} days ago | ⏳ Cache TTL: {cache_info} | 🌿 Branch: {branch}",
+        f"  {version_prefix}📅 Since: {since_days} days ago | ⏳ Cache: {cache_info} | 🌿 Branch: {branch}",
         style="dim",
     )
     if has_fetched:
@@ -67,7 +66,7 @@ def render_commits(
     commits: list[Commit],
     environments: list[EnvironmentStatus],
     since_days: int,
-    cache_ttl_minutes: int,
+    cache_info: str,
     console: Console | None = None,
     current_version: str = "",
     update_available: str | None = None,
@@ -121,7 +120,7 @@ def render_commits(
             )
 
     _render_status_line(
-        since_days, cache_ttl_minutes, project.repository.branch,
+        since_days, cache_info, project.repository.branch,
         any(c.fetched for c in commits), console,
         current_version, update_available,
     )
@@ -132,7 +131,7 @@ def render_environments(
     commits: list[Commit],
     environments: list[EnvironmentStatus],
     since_days: int,
-    cache_ttl_minutes: int,
+    cache_info: str,
     console: Console | None = None,
     current_version: str = "",
     update_available: str | None = None,
@@ -168,7 +167,7 @@ def render_environments(
     console.print(table)
 
     _render_status_line(
-        since_days, cache_ttl_minutes, project.repository.branch,
+        since_days, cache_info, project.repository.branch,
         any(c.fetched for c in commits), console,
         current_version, update_available,
     )

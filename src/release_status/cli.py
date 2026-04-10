@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -18,6 +18,7 @@ from release_status.config import (
     ProjectConfig,
     generate_schema,
     load_config,
+    parse_duration,
     resolve_config_path,
 )
 from release_status.models import Commit, EnvironmentStatus, ProviderError, ToolNotFoundError
@@ -93,7 +94,7 @@ def commits(
     proj = _apply_branch_override(_find_project(cfg, project))
     cache = _make_cache(cfg)
     since = _since_days(cfg)
-    cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
+    cache_info = _cache_info(cfg)
     current_version = get_current_version()
 
     with console.status("Fetching commits..."):
@@ -104,7 +105,7 @@ def commits(
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_commits(proj, commit_list, env_statuses, since, cache_ttl, console, current_version, update_available)
+    render_commits(proj, commit_list, env_statuses, since, cache_info, console, current_version, update_available)
 
 
 @app.command()
@@ -116,7 +117,7 @@ def envs(
     proj = _apply_branch_override(_find_project(cfg, project))
     cache = _make_cache(cfg)
     since = _since_days(cfg)
-    cache_ttl = 0 if _state.no_cache else cfg.cache_ttl_minutes
+    cache_info = _cache_info(cfg)
     current_version = get_current_version()
 
     with console.status("Fetching data..."):
@@ -125,7 +126,7 @@ def envs(
         env_statuses = _fetch_environments(proj, cache)
 
     _fetch_missing_commits(commit_list, env_statuses, proj, cache)
-    render_environments(proj, commit_list, env_statuses, since, cache_ttl, console, current_version, update_available)
+    render_environments(proj, commit_list, env_statuses, since, cache_info, console, current_version, update_available)
 
 
 @app.command()
@@ -213,7 +214,8 @@ def init() -> None:
 
     starter = {
         "cache_dir": str(Path.home() / ".cache" / "release-status"),
-        "cache_ttl_minutes": 5,
+        "git_cache_ttl": "5m",
+        "env_cache_ttl": "30s",
         "since_days": 180,
         "projects": [
             {
@@ -337,10 +339,17 @@ def _find_project(config: AppConfig, name: str) -> ProjectConfig:
 def _make_cache(config: AppConfig) -> Cache:
     cache = Cache(
         cache_dir=config.cache_dir,
-        ttl=timedelta(minutes=config.cache_ttl_minutes),
+        git_ttl=parse_duration(config.git_cache_ttl),
+        env_ttl=parse_duration(config.env_cache_ttl),
     )
-    cache.enabled = not _state.no_cache and config.cache_ttl_minutes > 0
+    cache.enabled = not _state.no_cache
     return cache
+
+
+def _cache_info(config: AppConfig) -> str:
+    if _state.no_cache:
+        return "disabled"
+    return f"git {config.git_cache_ttl} \\ env {config.env_cache_ttl}"
 
 
 def _apply_branch_override(proj: ProjectConfig) -> ProjectConfig:
@@ -366,7 +375,7 @@ def _cache_key_commits(proj: ProjectConfig, since_days: int) -> str:
 
 def _fetch_commits(proj: ProjectConfig, cache: Cache, since_days: int) -> list[Commit]:
     key = _cache_key_commits(proj, since_days)
-    cached = cache.get(key)
+    cached = cache.get_git(key)
     if cached is not None:
         return [
             Commit(
@@ -386,7 +395,7 @@ def _fetch_commits(proj: ProjectConfig, cache: Cache, since_days: int) -> list[C
         console.print(f"[red]Error fetching commits:[/red] {e}")
         raise typer.Exit(1)
 
-    cache.set(
+    cache.set_git(
         key,
         [
             {
@@ -408,7 +417,7 @@ def _fetch_environments(
     results: list[EnvironmentStatus] = []
     for env_config in proj.environments:
         key = f"env:{env_config.url}"
-        cached = cache.get(key)
+        cached = cache.get_env(key)
         if cached is not None:
             results.append(
                 EnvironmentStatus(
@@ -421,7 +430,7 @@ def _fetch_environments(
             continue
 
         status = resolve_environment(env_config)
-        cache.set(
+        cache.set_env(
             key,
             {
                 "name": status.name,
@@ -452,7 +461,7 @@ def _fetch_missing_commits(
             continue
 
         key = f"commit:{env.version}"
-        cached = cache.get(key)
+        cached = cache.get_git(key)
         if cached is not None:
             commit_list.append(
                 Commit(
@@ -472,7 +481,7 @@ def _fetch_missing_commits(
         except (ProviderError, ToolNotFoundError):
             continue
 
-        cache.set(
+        cache.set_git(
             key,
             {
                 "sha": commit.sha,
