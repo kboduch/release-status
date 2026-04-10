@@ -175,6 +175,7 @@ def clear_cache() -> None:
 def update() -> None:
     """Update release-status to the latest version."""
     current = get_current_version()
+    clear_update_cache()
     update_version, check_ok = check_for_update_strict(current)
 
     if not update_version:
@@ -191,7 +192,7 @@ def update() -> None:
 
     console.print(f"Updating: v{current} → v{update_version}")
     result = subprocess.run(
-        ["uv", "tool", "install", PACKAGE_NAME, "--force", "--reinstall"],
+        ["uv", "tool", "install", PACKAGE_NAME, "--force", "--reinstall", "--no-cache"],
         capture_output=True,
         text=True,
     )

@@ -105,3 +105,4 @@ def test_update_runs_uv_install() -> None:
     args = mock_run.call_args[0][0]
     assert args[0] == "uv"
     assert "release-status" in args
+    assert "--no-cache" in args

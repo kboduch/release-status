@@ -79,7 +79,7 @@ Provider auth tokens are referenced by environment variable name (`token_env`), 
 - Cache keys: `"commits:{provider_type}:{url}:{branch}:{since}"` and `"env:{name}:{url}"` and `"commit:{repo_url}:{sha}"`
 
 ### Version check & self-update
-`version.py` checks PyPI JSON API (`/pypi/release-status/json`) for newer versions. Results cached 24h at `~/.cache/release-status/version-check.json` (independent of project config). Fail-safe: any error silently returns None. Version displayed in status line of `commits` and `envs` commands. `release-status update` runs `uv tool install release-status --force --reinstall`.
+`version.py` checks PyPI JSON API (`/pypi/release-status/json`) for newer versions. Results cached 24h at `~/.cache/release-status/version-check.json` (independent of project config). Fail-safe: any error silently returns None. Version displayed in status line of `commits` and `envs` commands. `release-status update` clears version check cache before checking PyPI, and runs `uv tool install release-status --force --reinstall --no-cache` (bypasses uv's index cache to always fetch the latest from PyPI).
 
 ### Releasing
 Run `gh workflow run release.yml -f version=X.Y.Z`. The workflow validates version format, checks it's newer than current, bumps pyproject.toml, commits, tags, builds, publishes to PyPI, and creates a GitHub Release with auto-generated notes. Requires `PYPI_TOKEN` secret in repo settings.
